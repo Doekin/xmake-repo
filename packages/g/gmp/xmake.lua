@@ -27,6 +27,9 @@ package("gmp")
     add_deps("m4")
 
     on_install("@!windows and !wasm", function (package)
+        if is_host("windows") then
+            io.replace("configure", "LIBTOOL='$(SHELL) $(top_builddir)/libtool'", "LIBTOOL='\"$(SHELL)\" $(top_builddir)/libtool'", {plain = true})
+        end
         local configs = {}
         table.insert(configs, "--enable-shared=" .. (package:config("shared") and "yes" or "no"))
         table.insert(configs, "--enable-static=" .. (package:config("shared") and "no" or "yes"))
@@ -49,5 +52,15 @@ package("gmp")
     end)
 
     on_test(function (package)
-        assert(package:has_cfuncs("gmp_randinit", {includes = "gmp.h"}))
+        assert(package:check_csnippets([[
+            void factorial(int n) {
+                int i;
+                mpz_t p;
+                mpz_init_set_ui(p,1);
+                for (i=1; i <= n ; ++i){
+                    mpz_mul_ui(p,p,i);
+                }
+                mpz_clear(p);
+            }
+        ]], {includes = "gmp.h"}))
     end)
