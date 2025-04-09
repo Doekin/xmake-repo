@@ -48,6 +48,12 @@ package("libxml2")
     end
 
     on_load(function (package)
+        if not (package:is_plat("android") and is_subhost("windows")) then
+            package:config_set("lzma", true)
+        end
+        if not package:is_plat("wasm", "iphoneos", "android") or (package:is_plat("android") and not is_subhost("windows")) then
+            package:config_set("icu", true)
+        end
         if package:config("all") then
             for name, _ in pairs(import("configs").get_libxml2_configs()) do
                 if name ~= "python" then
@@ -77,7 +83,7 @@ package("libxml2")
             package:add("deps", "libiconv")
         end
         if package:config("icu") then
-            package:add("deps", "icu4c")
+            package:add("deps", "icu4c", {configs = {shared = package:config("shared")}})
         end
         if package:config("lzma") then
             package:add("deps", "xz")
@@ -139,10 +145,10 @@ package("libxml2")
         if lzma and not lzma:config("shared") then
             table.insert(cxflags, "-DLZMA_API_STATIC")
         end
-        import("package.tools.cmake")
-        local envs = cmake.buildenvs(package, {cxflags = cxflags, shflags = shflags})
-        utils.dump(envs)
-        cmake.install(package, configs, {cxflags = cxflags, shflags = shflags})
+        utils.dump(cxflags, shflags)
+        import("package.tools.cmake").install(package, configs, {cxflags = cxflags, shflags = shflags
+        --, packagedeps = {"libiconv", "xz", "zlib"}
+        })
 
         if package:is_plat("windows") then
             local libfiles = os.files(package:installdir("lib/*xml2*.lib"))[1]
