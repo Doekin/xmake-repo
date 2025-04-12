@@ -10,13 +10,17 @@ package("xz")
     add_versions("5.2.10", "eb7a3b2623c9d0135da70ca12808a214be9c019132baaa61c9e1d198d1d9ded3")
     add_versions("5.4.1", "e4b0f81582efa155ccf27bb88275254a429d44968e488fc94b806f2a61cd3e22")
 
+    if is_plat("wasm") then
+        add_configs("shared", {description = "Build shared library.", default = false, type = "boolean", readonly = true})
+    end
+
     on_load(function (package)
         if package:is_plat("windows") and not package:config("shared") then
             package:add("defines", "LZMA_API_STATIC")
         end
     end)
 
-    on_install("windows", "mingw@windows,msys", function (package)
+    on_install("windows", "mingw", function (package)
         io.writefile("xmake.lua", [[
             add_rules("mode.release", "mode.debug")
             target("lzma")
@@ -51,7 +55,7 @@ package("xz")
         import("package.tools.xmake").install(package)
     end)
 
-    on_install("macosx", "linux", "mingw@linux,macosx", function (package)
+    on_install("!windows and !mingw", function (package)
         local configs = {"--disable-dependency-tracking", "--disable-silent-rules"}
         if package:debug() then
             table.insert(configs, "--enable-debug")
