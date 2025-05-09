@@ -13,6 +13,9 @@ package("ncurses")
     add_versions("6.4", "6931283d9ac87c5073f30b6290c4c75f21632bb4fc3603ac8100812bed248159")
     add_versions("6.5", "136d91bc269a9a5785e5f9e980bc76ab57428f604ce3e5a5a90cebc767971cc6")
 
+    add_patches(">=6.3", "patches/6.3/libs.patch", "dc4261b6642058a9df1c0945e2409b24f84673ddc3a665d8a15ed3580e51ee25")
+    add_patches(">=6.3", "patches/6.3/pkgconfig.patch", "b8544a607dfbeffaba2b087f03b57ed1fa81286afca25df65f61b04b5f3b3738")
+
     add_configs("widec", {description = "Compile with wide-char/UTF-8 code.", default = true, type = "boolean"})
 
     if is_plat("linux") then
@@ -20,6 +23,9 @@ package("ncurses")
     end
 
     on_load(function (package)
+        if package:is_cross() then
+            package:add("deps", "ncurses~host", {kind = "binary", private = true})
+        end
         if package:config("widec") then
             package:add("links", "ncursesw", "formw", "panelw", "menuw")
             package:add("includedirs", "include/ncursesw", "include")
@@ -33,7 +39,7 @@ package("ncurses")
         end
     end)
 
-    on_install("linux", "macosx", "bsd", "msys", function (package)
+    on_install("linux", "macosx", "bsd", "msys", "mingw", function (package)
         local configs = {
             "--without-manpages",
             "--enable-sigwinch",
@@ -41,11 +47,28 @@ package("ncurses")
             "--without-tests",
             "--without-ada",
         }
+        if package:is_cross() then
+            local tic = package:dep("ncurses"):installdir("bin", "tic" .. (is_host("windows") and ".exe" or ""))
+            if os.isfile(tic) then
+                table.insert(configs, "--with-tic-path=" .. path:unix(tic))
+            end
+        end
+        local cxflags = {}
+        if package:is_plat("msys", "mingw") then
+            table.insert(cxflags, "-D__USE_MINGW_ACCESS")
+            table.insert(configs, "--enable-term-driver")
+        end
 
         table.insert(configs, "--with-debug=" .. (package:is_debug() and "yes" or "no"))
         table.insert(configs, "--with-shared=" .. (package:config("shared") and "yes" or "no"))
         table.insert(configs, "--enable-widec=" .. (package:config("widec") and "yes" or "no"))
-        import("package.tools.autoconf").install(package, configs, {arflags = {"-curvU"}})
+        import("package.tools.autoconf").install(package, configs, {arflags = {"-curvU"}, cxflags = cxflags})
+        if package:config("widec") then
+            os.trycp(package:installdir("include", "ncursesw", "**"), package:installdir("include", "ncurses"))
+            local suffix = (not package:config("shared")) and ".a"
+            suffix = suffix or (package:is_plat("msys", "mingw") and ".dll.a" or ".so")
+            os.trycp(path.join(package:installdir("lib"), "libncursesw" .. suffix), path.join(package:installdir("lib"), "libncurses" .. suffix))
+        end
     end)
 
     on_test(function (package)
