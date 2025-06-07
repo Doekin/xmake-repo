@@ -14,7 +14,7 @@ package("libxkbcommon")
     end
 
     add_configs("x11", {description = "Enable backend to X11 (default is false).", default = false, type = "boolean"})
-    add_configs("wayland", {description = "Enable backend to X11 (default is true).", default = true, type = "boolean"})
+    add_configs("wayland", {description = "Enable backend to Wayland (default is true).", default = true, type = "boolean"})
     add_configs("tools", {description = "Enable xkbcommon binaries.", default = false, type = "boolean"})
 
     on_load(function (package)
