@@ -58,7 +58,7 @@ package("cairo")
         end
     end)
 
-    on_install("windows|x64", "windows|x86", "macosx", "linux", function (package)
+    on_install("windows|x64", "windows|x86", "macosx", "linux", "bsd", "cross", function (package)
         import("package.tools.meson")
 
         local configs = {

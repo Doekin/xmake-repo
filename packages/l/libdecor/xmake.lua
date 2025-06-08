@@ -11,7 +11,7 @@ package("libdecor")
     add_configs("gtk", {description = "Build GTK plugin", default = false, type = "boolean"})
 
     add_deps("meson", "ninja")
-    add_deps("wayland", "wayland-protocols", "cairo")
+    add_deps("wayland", "wayland-protocols", "pango")
 
     on_load(function (package)
         if package:config("dbus") then

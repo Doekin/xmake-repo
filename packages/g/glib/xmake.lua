@@ -9,8 +9,10 @@ package("glib")
     end, excludes = {"*/COPYING"}})
     add_urls("https://gitlab.gnome.org/GNOME/glib/-/archive/$(version)/glib-$(version).tar.gz", {alias = "gitlab"})
     add_urls("https://gitlab.gnome.org/GNOME/glib.git")
-    add_versions("home:2.71.0", "926816526f6e4bba9af726970ff87be7dac0b70d5805050c6207b7bb17ea4fca")
+    add_versions("home:2.85.0", "97cfb0466ae41fca4fa2a57a15440bee15b54ae76a12fb3cbff11df947240e48")
     add_versions("home:2.78.1", "915bc3d0f8507d650ead3832e2f8fb670fce59aac4d7754a7dab6f1e6fed78b2")
+    add_versions("home:2.71.0", "926816526f6e4bba9af726970ff87be7dac0b70d5805050c6207b7bb17ea4fca")
+
     add_patches("2.71.0", path.join(os.scriptdir(), "patches", "2.71.0", "macosx.patch"), "a0c928643e40f3a3dfdce52950486c7f5e6f6e9cfbd76b20c7c5b43de51d6399")
 
     if is_plat("mingw") and is_subhost("msys") then
@@ -78,7 +80,7 @@ package("glib")
         end
     end)
 
-    on_install("windows", "macosx", "linux", "cross", function (package)
+    on_install("windows", "macosx", "linux", "cross", "bsd", function (package)
         local configs = {"-Dbsymbolic_functions=false",
                          "-Ddtrace=false",
                          "-Dman=false",

@@ -13,20 +13,18 @@ package("fltk")
 
     add_patches("1.3.9", "patches/1.3.9/cmake-fluid.patch", "06ee1e82a74651a0b4ba4b386e5e5436d8b95584330d02a8a2c53351210a9127")
 
-    if is_plat("linux") then
-        add_configs("pango", {description = "Use pango for font support (required if Wayland is enabled)", default = false, type = "boolean"})
-        add_configs("xft", {description = "Use libXft for font support", default = false, type = "boolean"})
-    end
+    add_configs("fluid", {description = "Build fluid", default = false, type = "boolean"})
+    add_configs("forms", {description = "Build forms", default = false, type = "boolean"})
     if is_plat("linux", "bsd", "cross") then
         add_configs("x11", {description = "Use X11", default = true, type = "boolean"})
         add_configs("wayland", {description = "Support the Wayland backend", default = true, type = "boolean"})
-        add_configs("libdecor", {description = "Use libdecor's GTK plugin", default = false, type = "boolean"})
+        add_configs("pango", {description = "Use pango for font support (required if Wayland is enabled)", default = true, type = "boolean"})
+        add_configs("xft", {description = "Use libXft for font support", default = false, type = "boolean"})
+        add_configs("libdecor", {description = "Use libdecor's GTK plugin (no effect without Wayland backend)", default = false, type = "boolean"})
     end
-    add_configs("fluid", {description = "Build fluid", default = false, type = "boolean"})
-    add_configs("forms", {description = "Build forms", default = false, type = "boolean"})
 
-    if is_plat("windows", "mingw") then
-        add_syslinks("ws2_32", "comctl32", "gdi32", "oleaut32", "ole32", "uuid", "shell32", "advapi32", "comdlg32", "winspool", "user32", "kernel32", "odbc32")
+    if is_plat("windows", "mingw", "cygwin", "msys") then
+        add_syslinks("ws2_32", "comctl32", "gdi32", "oleaut32", "ole32", "uuid", "shell32", "advapi32", "comdlg32", "winspool", "user32", "kernel32", "odbc32", "gdiplus")
     elseif is_plat("macosx") then
         add_frameworks("Cocoa")
     elseif is_plat("android") then
@@ -46,13 +44,14 @@ package("fltk")
                 package:add("deps", "libx11", "libxext", "libxinerama", "libxcursor", "libxrender", "libxfixes")
             end
             if package:config("wayland") then
-                package:add("deps", "wayland", "wayland-protocols", "dbus", "libxkbcommon", "libdecor")
+                package:add("deps", "wayland", "wayland-protocols", "dbus", "libxkbcommon")
                 package:config_set("pango", true)
+                if package:config("libdecor") then
+                    package:add("deps", "libdecor")
+                end
             end
-        end
-        if package:is_plat("linux") then
             if package:version() and package:version():eq("1.3.9") then
-                assert(not package:config("fluid"), "package(fltk/1.3.9): Unsupported fluid on linux")
+                assert(not package:config("fluid"), "package(fltk/1.3.9): Unsupported fluid")
             end
             if package:config("pango") then
                 package:add("deps", "pango")
@@ -60,16 +59,15 @@ package("fltk")
             if package:config("xft") then
                 package:add("deps", "libxft")
             end
-            if package:config("libdecor") and package:config("wayland") then
-                package:add("deps", "libdecor")
-            end
         end
     end)
 
-    on_install("windows|x86", "windows|x64", "linux", "macosx", "mingw", "msys", function (package)
+    on_install("windows|x86", "windows|x64", "linux", "macosx", "mingw", "cygwin", "msys", function (package)
         for _, file in ipairs(os.files("**.cxx")) do
             io.replace(file, "<libpng/png.h>", "<png.h>", {plain = true})
         end
+        io.replace("CMake/options.cmake", "list(APPEND FLTK_IMAGE_LIBRARIES ${JPEG_LIBRARIES})",
+        "list(APPEND FLTK_IMAGE_LIBRARIES ${JPEG_LIBRARIES})\ninclude_directories(${JPEG_INCLUDE_DIRS})", {plain = true})
 
         local configs = {
             "-DFLTK_BUILD_TEST=OFF",
@@ -81,7 +79,6 @@ package("fltk")
             "-DFLTK_USE_SYSTEM_LIBPNG=ON",
             "-DFLTK_USE_SYSTEM_ZLIB=ON",
             "-DFLTK_USE_SYSTEM_LIBJPEG=ON",
-            "-DFLTK_USE_SYSTEM_LIBDECOR=ON",
         }
         table.insert(configs, "-DCMAKE_BUILD_TYPE=" .. (package:is_debug() and "Debug" or "Release"))
         table.insert(configs, "-DOPTION_BUILD_SHARED_LIBS=" .. (package:config("shared") and "ON" or "OFF"))
@@ -89,15 +86,13 @@ package("fltk")
         table.insert(configs, "-DFLTK_MSVC_RUNTIME_DLL=" .. (package:has_runtime("MD") and "ON" or "OFF"))
         table.insert(configs, "-DFLTK_BUILD_FLUID=" .. (package:config("fluid") and "ON" or "OFF"))
         table.insert(configs, "-DFLTK_BUILD_FORMS=" .. (package:config("forms") and "ON" or "OFF"))
-        if package:is_plat("linux") then
+        if package:is_plat("linux", "bsd", "cross") then
             table.insert(configs, "-DOPTION_USE_PANGO=" .. (package:config("pango") and "ON" or "OFF"))
             table.insert(configs, "-DFLTK_USE_PANGO=" .. (package:config("pango") and "ON" or "OFF"))
             table.insert(configs, "-DOPTION_USE_XFT=" .. (package:config("xft") and "ON" or "OFF"))
             table.insert(configs, "-DFLTK_USE_XFT=" .. (package:config("xft") and "ON" or "OFF"))
-        end
-        if package:is_plat("linux", "bsd", "cross") then
             table.insert(configs, "-DFLTK_BACKEND_X11=" .. (package:config("x11") and "ON" or "OFF"))
-            table.insert(configs, "-DFLTK_BACKEND_WAYLAND=" .. (package:config("wayland") and "ON" or "OFF"))
+            table.insert(configs, "-DFLTK_USE_LIBDECOR_GTK=" .. (package:config("libdecor") and "ON" or "OFF"))
         end
         import("package.tools.cmake").install(package, configs)
     end)

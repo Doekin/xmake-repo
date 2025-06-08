@@ -6,6 +6,7 @@ package("pango")
 
     add_urls("https://gitlab.gnome.org/GNOME/pango/-/archive/$(version)/pango-$(version).tar.gz")
     add_urls("https://gitlab.gnome.org/GNOME/pango.git")
+    add_versions("1.56.3", "7a059664dcd1c517979e2db2e71dc9a3550acf5a8cf76a1aadb6526d9d4b90f1")
     add_versions("1.51.1", "ea92cd570cdba62ca52cc0a7c9ea3cd311b6da3f0328a5aa8a4a81b0a74944a5")
     add_versions("1.50.3", "4a8b0cf33d5f9ecaa9cd99dd72703d5c4c53bc58df64dd9538493bb4356ab691")
 
@@ -27,9 +28,9 @@ package("pango")
     end
     add_includedirs("include", "include/pango-1.0")
 
-    on_install("windows|x64", "windows|x86", "macosx", "linux", function (package)
+    on_install("windows|x64", "windows|x86", "macosx", "linux", "bsd", "cross", function (package)
         import("package.tools.meson")
-        local configs = {"-Dintrospection=disabled", "-Dgtk_doc=false", "-Dfontconfig=enabled"}
+        local configs = {"-Dintrospection=disabled", "-Dfontconfig=enabled"}
 
         table.insert(configs, "-Ddefault_library=" .. (package:config("shared") and "shared" or "static"))
         io.gsub("meson.build", "subdir%('tests'%)", "")
