@@ -22,7 +22,7 @@ package("fontconfig")
         add_deps("pkg-config")
     end
 
-    on_load("windows", "linux", "macosx", function (package)
+    on_load("windows", "linux", "macosx", "bsd", "cross", function (package)
         if package:config("nls") and not package:is_plat("linux") then
             package:add("deps", "libintl")
         end
@@ -32,7 +32,7 @@ package("fontconfig")
         end
     end)
 
-    on_install("windows", "linux", "macosx", function (package)
+    on_install("windows", "linux", "macosx", "bsd", "cross", function (package)
         if package:is_plat("windows") then
             io.replace("meson.build", "c_args = []", "c_args = ['-DXML_STATIC']", {plain = true})
         end
