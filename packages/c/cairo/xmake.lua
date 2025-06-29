@@ -9,6 +9,7 @@ package("cairo")
     add_versions("1.17.6", "a2227afc15e616657341c42af9830c937c3a6bfa63661074eabef13600e8936f")
     add_versions("1.17.8", "b4ed6d33037171d4c6594345b42d81796f335a6995fdf5638db0d306c17a0d3e")
     add_versions("1.18.0", "39a78afdc33a435c0f2ab53a5ec2a693c3c9b6d2ec9783ceecb2b94d54d942b0")
+    add_versions("1.18.4", "2f3e6e665dbbb420809102b71ad7d0f7ce870a0b1bf8b34c073f06aefb511fc6")
 
     add_patches("1.18.0", path.join(os.scriptdir(), "patches", "1.18.0", "alloca.patch"), "55f8577929537d43eed9f74241560821001b6c8613d6a7a21cff83f8431c6a70")
 
@@ -34,14 +35,14 @@ package("cairo")
         add_syslinks("pthread")
     end
 
-    if is_plat("windows") then
-        add_syslinks("gdi32", "msimg32", "user32", "ole32")
+    if is_plat("windows", "mingw", "msys", "cygwin") then
+        add_syslinks("gdi32", "msimg32", "user32", "ole32", "windowscodecs")
     elseif is_plat("macosx") then
         add_frameworks("CoreGraphics", "CoreFoundation", "CoreText", "Foundation")
     end
 
-    on_load("windows|x64", "windows|x86", "macosx", "linux", function (package)
-        if package:is_plat("windows") and not package:config("shared") then
+    on_load(function (package)
+        if package:is_plat("windows", "mingw", "msys", "cygwin") and not package:config("shared") then
             package:add("defines", "CAIRO_WIN32_STATIC_BUILD=1")
         end
         if package:config("freetype") then
@@ -58,7 +59,7 @@ package("cairo")
         end
     end)
 
-    on_install("windows|x64", "windows|x86", "macosx", "linux", function (package)
+    on_install(function (package)
         import("package.tools.meson")
 
         local configs = {
@@ -77,7 +78,11 @@ package("cairo")
         io.replace("meson.build", "subdir('fuzzing')", "", {plain = true})
         io.replace("meson.build", "subdir('docs')", "", {plain = true})
         io.replace("meson.build", "'CoreFoundation'", "'CoreFoundation', 'Foundation'", {plain = true})
-        local envs = meson.buildenvs(package, {packagedeps = {"libintl", "libiconv", "lzo"}})
+        local cflags = {}
+        if package:is_plat("iphoneos") then
+            table.insert(cflags, "-DHAVE_CTIME_R")
+        end
+        local envs = meson.buildenvs(package, {cflags = cflags, packagedeps = {"libintl", "libiconv", "lzo"}})
         if package:is_plat("windows") then
             envs.PATH = package:dep("pkgconf"):installdir("bin") .. path.envsep() .. envs.PATH
         end
