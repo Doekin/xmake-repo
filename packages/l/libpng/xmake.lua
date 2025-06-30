@@ -73,7 +73,11 @@ package("libpng")
             end
             os.cp("scripts/pnglibconf.h.prebuilt", "pnglibconf.h")
         end
+        local version = try { function() return io.readfile("scripts/libpng-config-head.in"):match("version=(%S+)") end }
+        version = version or (package:version() and package:version_str():gsub("^v", "")) or "1.0.0"
+        utils.dump("version", version)
         io.writefile("xmake.lua", format([[
+            set_version("%s")
             add_rules("mode.debug", "mode.release")
             add_requires("zlib")
             target("png")
@@ -82,10 +86,11 @@ package("libpng")
                 %s
                 add_headerfiles("*.h")
                 add_packages("zlib")
+                -- add_rules("utils.install.pkgconfig_importfiles")
                 if is_kind("shared") and is_plat("windows") then
                     add_defines("PNG_BUILD_DLL")
                 end
-        ]], src_include))
+        ]], version, src_include))
         import("package.tools.xmake").install(package)
     end)
 

@@ -40,13 +40,17 @@ package("glib")
     elseif is_plat("macosx") then
         add_deps("libiconv", {system = true})
         add_deps("libintl")
-    elseif is_plat("windows", "mingw") then
+    elseif is_plat("android") then
+        add_deps("libiconv")
         add_deps("libintl")
-        if is_subhost("windows") then
-            add_deps("pkgconf")
-        else
-            add_deps("pkg-config")
-        end
+    elseif is_plat("windows", "mingw", "cygwin") then
+        add_deps("libintl")
+    end
+
+    if is_subhost("windows") then
+        add_deps("pkgconf")
+    elseif is_host("bsd") then
+        add_deps("pkg-config")
     end
 
     add_includedirs("include/glib-2.0", "lib/glib-2.0/include")
@@ -75,6 +79,11 @@ package("glib")
         end
     end)
 
+    on_check("android", function (package)
+        local ndkver = package:toolchain("ndk"):config("ndkver")
+        assert(ndkver and tonumber(ndkver) > 22, "package(glib): need ndk version > 22")
+    end)
+
     on_load(function (package)
         if package:gitref() or package:version():ge("2.74.0") then
             package:add("deps", "pcre2")
@@ -83,7 +92,7 @@ package("glib")
         end
     end)
 
-    on_install("windows", "macosx", "linux", "cross", "mingw", function (package)
+    on_install(function (package)
         local configs = {"-Dbsymbolic_functions=false",
                          "-Ddtrace=false",
                          "-Dman=false",

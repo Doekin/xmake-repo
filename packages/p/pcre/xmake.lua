@@ -36,7 +36,7 @@ package("pcre")
         import("package.tools.cmake").install(package, configs)
     end)
 
-    on_install("macosx", "linux", "mingw", "cross", function (package)
+    on_install("@!windows", function (package)
         local configs = {}
         table.insert(configs, "--enable-shared=" .. (package:config("shared") and "yes" or "no"))
         table.insert(configs, "--enable-static=" .. (package:config("shared") and "no" or "yes"))

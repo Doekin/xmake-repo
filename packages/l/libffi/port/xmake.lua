@@ -151,12 +151,12 @@ target("ffi")
         add_files("src/x86/ffi64.c", "src/x86/ffiw64.c", "src/x86/win64_intel.S")
         add_includedirs("src/x86")
         add_headerfiles("src/x86/ffitarget.h")
-    elseif is_arch("arm") then
+    elseif is_arch("arm", "armeabi.*") then
         add_files("src/arm/ffi.c")
         add_files(is_plat("windows") and "src/arm/sysv_msvc_arm32.S" or "src/arm/sysv.S")
         add_includedirs("src/arm")
         add_headerfiles("src/arm/ffitarget.h")
-    elseif is_arch("arm64") then
+    elseif is_arch("arm64.*", "aarch64") then
         add_files("src/aarch64/ffi.c")
         add_files(is_plat("windows") and "src/aarch64/win64_armasm.S" or "src/aarch64/sysv.S")
         add_includedirs("src/aarch64")

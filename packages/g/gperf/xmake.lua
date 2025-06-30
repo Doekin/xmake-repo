@@ -28,7 +28,11 @@ package("gperf")
     on_install("@macosx", "@linux", "@bsd", "@msys", function (package)
         io.replace("lib/getline.cc", "register", "", {plain = true})
         io.replace("lib/getopt.c", "register", "", {plain = true})
-        import("package.tools.autoconf").install(package)
+        local cflags = {}
+        if package:version():le("3.1") then
+            table.insert(cflags, "-std=c99")
+        end
+        import("package.tools.autoconf").install(package, {}, {cflags = cflags})
     end)
 
     on_test(function (package)
