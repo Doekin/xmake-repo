@@ -19,6 +19,7 @@ local sorted_libs = {
   "graph",
   "serialization",
   "regex",
+  "multiprecision",
   "math",
   "random",
   "fiber",
@@ -84,6 +85,9 @@ local libs_dep = {
     "context",
     "exception",
     "system"
+  },
+  multiprecision = {
+    "math"
   },
   math = {
     "random"
